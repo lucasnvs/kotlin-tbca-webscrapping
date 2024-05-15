@@ -1,0 +1,3 @@
+- OkHttp to Fetch Website DOM
+- Ksoup to Parse HTML
+- Ktorm to Handle Database
