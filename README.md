@@ -6,10 +6,10 @@
 
 ```sql
 CREATE DATABASE tbca;
-USE DATABASE tbca;
+USE tbca;
 
 CREATE TABLE foods (
-	id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
     food_unique_code VARCHAR(10) UNIQUE NOT NULL,
     portuguese_name VARCHAR(30) NOT NULL,
     scientific_name VARCHAR(255) NOT NULL,
@@ -18,10 +18,10 @@ CREATE TABLE foods (
 );
 
 CREATE TABLE nutrients (
-	id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
     food_unique_code VARCHAR(10) NOT NULL,
     n_component VARCHAR(100) NOT NULL,
-	unity VARCHAR(10) NOT NULL,
+    unity VARCHAR(10) NOT NULL,
     value_by_hundred_grams DOUBLE NOT NULL,
     default_deviation VARCHAR(50),
     min_value DOUBLE,
