@@ -8,14 +8,16 @@ import model.Food
 import model.Nutrients
 import okhttp3.*
 import org.ktorm.dsl.from
+import org.ktorm.dsl.insert
 import org.ktorm.dsl.select
+import org.ktorm.dsl.where
 import java.io.IOException
-import kotlin.math.max
 
 data class Param(
     val key: String,
     val value: String
 )
+
 object ApiClient {
 
     private val client = OkHttpClient()
@@ -40,29 +42,22 @@ object ApiClient {
 }
 
 fun main() =  runBlocking {
-//    val list = getFoods()
-//    list.forEach {
-//        println(it)
-//    }
-
-//    var n = getNutrients("BRC0227B")
-
-
+    // getFoodsAndInsertOnDatabase()
 }
 
-fun fetch(targetUrl: String, param: Param): String? {
+fun fetch(targetUrl: String, param: Param): String? { // função com a intenção de implementar coroutines no futuro
     return ApiClient.fetchNutritionalData(targetUrl, param);
 }
 
 fun parseRowsToFoods(document: String) : List<Food> {
-    val NUMBER_OF_FIELDS = 5
+    val FIELDS_NUMBER = 5
     val doc: Document = Ksoup.parse(document)
     val trs = doc.select(".table tbody tr")
     var result = mutableListOf<Food>()
 
     for(tr in trs) {
         val dataCols: Elements = tr.select("td a")
-        if(dataCols.size === NUMBER_OF_FIELDS) {
+        if(dataCols.size === FIELDS_NUMBER) {
             val (code, name, scientificName, group, brand) = dataCols
             result.add(Food(code.text(), name.text(), scientificName.text(), group.text(), brand.text(), null))
             continue;
@@ -80,18 +75,16 @@ fun parseRowsToNutrients(document: String) : List<Nutrients> {
     operator fun <T> List<T>.component8(): T = get(7)
     operator fun <T> List<T>.component9(): T = get(8)
 
-    val NUMBER_OF_FIELDS = 9
+    val FIELDS_NUMBER = 9
     val doc: Document = Ksoup.parse(document)
     val trs = doc.select("#tabela1 tbody tr")
     var result = mutableListOf<Nutrients>()
     for(tr in trs) {
         val dataCols: Elements = tr.select("td")
-        if(dataCols.size === NUMBER_OF_FIELDS) {
+        if(dataCols.size === FIELDS_NUMBER) {
             val (component, unity, value, standardDeviation, minValue, maxValue, numberOfData, references, typeOfData) = dataCols
-            println(component)
             result.add(Nutrients(component.text(), unity.text(), value.text(), standardDeviation.text(), minValue.text(), maxValue.text(), numberOfData.text(), references.text(), typeOfData.text()))
             continue;
-
         }
         println("ERRO: Quantidade de CAMPOS e NUMERO DE COLUNAS incompatível!")
         break
@@ -101,19 +94,20 @@ fun parseRowsToNutrients(document: String) : List<Nutrients> {
 }
 
 fun getFoods(): List<Food> {
-    val TOTAL_PAGES = 2 // 55
+    val START_PAGE = 1 // Página de inicio da busca
+    val TOTAL_PAGES = 57 // Total de Páginas = 57
     val TARGET_URL = "http://www.tbca.net.br/base-dados/composicao_alimentos.php"
 
     var result: List<Food> = listOf();
-    for (page in 1..TOTAL_PAGES) {
+    for (page in START_PAGE..TOTAL_PAGES) {
         val tbcaHTML = fetch(TARGET_URL, Param("pagina", page.toString()))
         if(tbcaHTML == null) {
             println("Erro ao buscar dados nutricionais.")
             break
         }
         val foodsData = parseRowsToFoods(tbcaHTML)
-
         result = result.plus(foodsData)
+        println("Salvando dados da página $page...")
     }
 
     return result
@@ -127,7 +121,19 @@ fun getNutrients(code: String): List<Nutrients> {
 }
 
 fun getFoodsAndInsertOnDatabase() {
+    val foodsList = getFoods()
 
+    for( food in foodsList ) {
+        database.insert(FoodsDB) {
+            set(it.uniqueCode, food.code)
+            set(it.portugueseName, food.portugueseName)
+            set(it.scientificName, food.scientificName)
+            set(it.groupName, food.group)
+            set(it.brand, food.brand)
+        }
+    }
+    println("DATABASE: Todos ${foodsList.size} registros inseridos com sucesso.")
 }
 fun getNutrientsAndInsertOnDatabase() {
+
 }
