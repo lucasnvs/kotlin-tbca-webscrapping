@@ -1,13 +1,13 @@
 package model
 
 data class Nutrients(
-    private val component: String,
-    private val unity: String,
-    private val value: String,
-    private val defaultDeviation: String,
-    private val minValue: String,
-    private val maxValue: String,
-    private val usedDataValue: String,
-    private val references: String,
-    private val dataType: String,
+     val component: String,
+     val unity: String,
+     val value: Double,
+     val defaultDeviation: String,
+     val minValue: Double,
+     val maxValue: Double,
+     val usedDataValue: Int,
+     val references: String,
+     val dataType: String,
 )

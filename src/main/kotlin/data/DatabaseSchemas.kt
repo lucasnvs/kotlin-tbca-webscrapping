@@ -16,7 +16,7 @@ object FoodsDB : Table<Nothing>("foods") {
 
 object NutrientsDB : Table<Nothing>("nutrients") {
     val id = int("id").primaryKey()
-    val referencedFoodCode = varchar("food_unique_code").references(FoodsDB) { it }
+    val referencedFoodCode = varchar("food_unique_code")
     val component = varchar("n_component")
     val unity = varchar("unity")
     val value = double("value_by_hundred_grams")
@@ -24,6 +24,6 @@ object NutrientsDB : Table<Nothing>("nutrients") {
     val minValue = double("min_value")
     val maxValue = double("max_value")
     val usedDataValue = int("used_data_value")
-    val references = varchar("references")
+    val references = varchar("n_references")
     val dataType = varchar("data_type")
 }
