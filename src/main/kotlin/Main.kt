@@ -3,15 +3,17 @@ import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.select.Elements
 import data.Connection.database
 import data.FoodsDB
-import kotlinx.coroutines.*
+import data.NutrientsDB
+import kotlinx.coroutines.runBlocking
 import model.Food
 import model.Nutrients
-import okhttp3.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.ktorm.dsl.from
 import org.ktorm.dsl.insert
 import org.ktorm.dsl.select
-import org.ktorm.dsl.where
 import java.io.IOException
+import java.lang.NumberFormatException
 
 data class Param(
     val key: String,
@@ -43,6 +45,29 @@ object ApiClient {
 
 fun main() =  runBlocking {
     // getFoodsAndInsertOnDatabase()
+    getNutrientsAndInsertOnDatabase()
+}
+
+fun tryParseToDouble(value : String) : Double {
+    return try {
+        val parsedValue = value.replace(oldChar = ',', newChar = '.').toDouble()
+//        println("DOUBLE: SUCESSO NO PARSE DO VALOR: ${value} para ${parsedValue}")
+        parsedValue
+    } catch ( e : NumberFormatException) {
+//        println("DOUBLE: ERRO NO PARSE DO VALOR: ${value}. Retorno foi 0.0")
+        0.0
+    }
+}
+
+fun tryParseToInt(value : String) : Int {
+    return try {
+        val parsedValue = value.replace(oldChar = ',', newChar = '.').toInt()
+//        println("INT: SUCESSO NO PARSE DO VALOR: ${value} para ${parsedValue}")
+        parsedValue
+    } catch ( e : NumberFormatException) {
+//        println("INT: ERRO NO PARSE DO VALOR: ${value}. Retorno foi 0")
+        0
+    }
 }
 
 fun fetch(targetUrl: String, param: Param): String? { // função com a intenção de implementar coroutines no futuro
@@ -83,7 +108,7 @@ fun parseRowsToNutrients(document: String) : List<Nutrients> {
         val dataCols: Elements = tr.select("td")
         if(dataCols.size === FIELDS_NUMBER) {
             val (component, unity, value, standardDeviation, minValue, maxValue, numberOfData, references, typeOfData) = dataCols
-            result.add(Nutrients(component.text(), unity.text(), value.text(), standardDeviation.text(), minValue.text(), maxValue.text(), numberOfData.text(), references.text(), typeOfData.text()))
+            result.add(Nutrients(component.text(), unity.text(), tryParseToDouble(value.text()), standardDeviation.text(), tryParseToDouble(minValue.text()), tryParseToDouble(maxValue.text()), tryParseToInt(numberOfData.text()), references.text(), typeOfData.text()))
             continue;
         }
         println("ERRO: Quantidade de CAMPOS e NUMERO DE COLUNAS incompatível!")
@@ -134,6 +159,32 @@ fun getFoodsAndInsertOnDatabase() {
     }
     println("DATABASE: Todos ${foodsList.size} registros inseridos com sucesso.")
 }
-fun getNutrientsAndInsertOnDatabase() {
 
+fun getNutrientsAndInsertOnDatabase() {
+    var count = 0
+    for ( row in database.from(FoodsDB).select(FoodsDB.uniqueCode) ) {
+        count++
+
+        val code = row[FoodsDB.uniqueCode]
+        val nutrientsList = getNutrients(code!!)
+
+        for (nutrients in nutrientsList) {
+            database.insert(NutrientsDB) {
+                set(it.referencedFoodCode, code)
+                set(it.component, nutrients.component)
+                set(it.unity, nutrients.unity)
+                set(it.value, nutrients.value)
+                set(it.defaultDeviation, nutrients.defaultDeviation)
+                set(it.minValue, nutrients.minValue)
+                set(it.maxValue, nutrients.maxValue)
+                set(it.usedDataValue, nutrients.usedDataValue)
+                set(it.references, nutrients.references)
+                set(it.dataType, nutrients.dataType)
+            }
+        }
+
+        if(count%100 == 0) {
+            println("Registro de Unidade Nutrients inseridos $count. (De 100 em 100)")
+        }
+    }
 }
