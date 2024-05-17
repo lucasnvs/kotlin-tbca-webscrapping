@@ -17,6 +17,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("org.ktorm:ktorm-core:4.0.0")
     implementation("mysql:mysql-connector-java:8.0.30")
+    implementation("com.zaxxer:HikariCP:5.1.0")
+
     testImplementation(kotlin("test"))
 }
 

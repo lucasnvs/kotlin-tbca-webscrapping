@@ -1,6 +1,11 @@
 - OkHttp to Fetch Website DOM
 - Ksoup to Parse HTML
 - Ktorm to Handle Database
+- HikariCP to Handle Connection Pool
+
+TODO: Aprimorar velocidade do script.
+TODO: Criar Transaction no DB para evitar inconsistencia de dados.
+TODO: Add FEAT de loading para calcular tempo ou alguma lib de console com loading.
 
 ### MYSQL DATABASE TBCA
 
