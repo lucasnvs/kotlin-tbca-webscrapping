@@ -4,16 +4,12 @@ import com.fleeksoft.ksoup.select.Elements
 import data.Connection.database
 import data.FoodsDB
 import data.NutrientsDB
-import kotlinx.coroutines.runBlocking
 import model.Food
 import model.Nutrients
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.ktorm.dsl.from
-import org.ktorm.dsl.insert
-import org.ktorm.dsl.select
+import org.ktorm.dsl.*
 import java.io.IOException
-import java.lang.NumberFormatException
 
 data class Param(
     val key: String,
@@ -43,34 +39,13 @@ object ApiClient {
     }
 }
 
-fun main() =  runBlocking {
+fun main() {
     // getFoodsAndInsertOnDatabase()
-    getNutrientsAndInsertOnDatabase()
+    val lastCodeInserted: String? = "BRC0262B"; // Use if you paused the script for some reason, put the last nutrients `food_unique_code` inserted on db. For Example: "BRC0007H"
+    getNutrientsAndInsertOnDatabase(lastNutrientsFoodCodeInserted = lastCodeInserted)
 }
 
-fun tryParseToDouble(value : String) : Double {
-    return try {
-        val parsedValue = value.replace(oldChar = ',', newChar = '.').toDouble()
-//        println("DOUBLE: SUCESSO NO PARSE DO VALOR: ${value} para ${parsedValue}")
-        parsedValue
-    } catch ( e : NumberFormatException) {
-//        println("DOUBLE: ERRO NO PARSE DO VALOR: ${value}. Retorno foi 0.0")
-        0.0
-    }
-}
-
-fun tryParseToInt(value : String) : Int {
-    return try {
-        val parsedValue = value.replace(oldChar = ',', newChar = '.').toInt()
-//        println("INT: SUCESSO NO PARSE DO VALOR: ${value} para ${parsedValue}")
-        parsedValue
-    } catch ( e : NumberFormatException) {
-//        println("INT: ERRO NO PARSE DO VALOR: ${value}. Retorno foi 0")
-        0
-    }
-}
-
-fun fetch(targetUrl: String, param: Param): String? { // função com a intenção de implementar coroutines no futuro
+fun fetch(targetUrl: String, param: Param): String? {
     return ApiClient.fetchNutritionalData(targetUrl, param);
 }
 
@@ -160,31 +135,55 @@ fun getFoodsAndInsertOnDatabase() {
     println("DATABASE: Todos ${foodsList.size} registros inseridos com sucesso.")
 }
 
-fun getNutrientsAndInsertOnDatabase() {
+fun getNutrientsAndInsertOnDatabase(lastNutrientsFoodCodeInserted: String?) { // HardCodedParam
+    var query: Query
     var count = 0
-    for ( row in database.from(FoodsDB).select(FoodsDB.uniqueCode) ) {
+    if(lastNutrientsFoodCodeInserted.isNullOrEmpty()) {
+        query = database.from(FoodsDB).select(FoodsDB.uniqueCode)
+    } else {
+        query = database.from(FoodsDB).select(FoodsDB.uniqueCode).where { FoodsDB.uniqueCode greater lastNutrientsFoodCodeInserted}.orderBy(FoodsDB.uniqueCode.asc())
+    }
+
+    var totalTimeElapsed: Long = 0
+
+    for ( row in query ) {
         count++
 
-        val code = row[FoodsDB.uniqueCode]
-        val nutrientsList = getNutrients(code!!)
+        var nutrientsList: List<Nutrients> = listOf()
 
-        for (nutrients in nutrientsList) {
-            database.insert(NutrientsDB) {
-                set(it.referencedFoodCode, code)
-                set(it.component, nutrients.component)
-                set(it.unity, nutrients.unity)
-                set(it.value, nutrients.value)
-                set(it.defaultDeviation, nutrients.defaultDeviation)
-                set(it.minValue, nutrients.minValue)
-                set(it.maxValue, nutrients.maxValue)
-                set(it.usedDataValue, nutrients.usedDataValue)
-                set(it.references, nutrients.references)
-                set(it.dataType, nutrients.dataType)
+        val code = row[FoodsDB.uniqueCode]
+        val responseAndParseTime = elapsedTime {
+            nutrientsList = getNutrients(code!!)
+        }
+
+        if(nutrientsList.isEmpty()) return
+
+        val dbTime = elapsedTime {
+            try {
+                database.useTransaction {
+                    database.batchInsert(NutrientsDB) {
+                        for (nutrients in nutrientsList) {
+                            this.item {
+                                set(it.referencedFoodCode, code)
+                                set(it.component, nutrients.component)
+                                set(it.unity, nutrients.unity)
+                                set(it.value, nutrients.value)
+                                set(it.defaultDeviation, nutrients.defaultDeviation)
+                                set(it.minValue, nutrients.minValue)
+                                set(it.maxValue, nutrients.maxValue)
+                                set(it.usedDataValue, nutrients.usedDataValue)
+                                set(it.references, nutrients.references)
+                                set(it.dataType, nutrients.dataType)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                throw e
             }
         }
 
-        if(count%100 == 0) {
-            println("Registro de Unidade Nutrients inseridos $count. (De 100 em 100)")
-        }
+        totalTimeElapsed += responseAndParseTime + dbTime
+        println("MSG: All nutrients from $code entered successfully! | C: $count | TRI: ${count * 37} | R&PT: ${formatTimeMillis(responseAndParseTime)} | DBIT: ${formatTimeMillis(dbTime)} | Total Time Elapsed: ${formatTimeMillis(totalTimeElapsed)}")
     }
 }
