@@ -4,17 +4,22 @@ enum class Color {
 
 object Logger {
     fun info(tag: String, message: String) {
-        val build = "[INFO] Tag: $tag > $message"
+        val build = "[INFO] < $tag > $message"
         println(build)
     }
 
     fun success(tag: String, message: String) {
-        val build = "[SUCCESS] Tag: $tag > $message"
+        val build = "[SUCCESS] < $tag > $message"
         println(paint(build, Color.GREEN))
     }
 
     fun warning(tag: String, message: String) {
-        val build = "[WARNING] Tag: $tag > $message"
+        val build = "[WARNING] < $tag > $message"
+        println(paint(build, Color.YELLOW))
+    }
+
+    fun error(tag: String, message: String) {
+        val build = "[ERROR] < $tag > $message"
         println(paint(build, Color.RED))
     }
 }
