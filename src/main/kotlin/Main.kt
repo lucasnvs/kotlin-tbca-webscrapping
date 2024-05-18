@@ -40,9 +40,9 @@ object ApiClient {
 }
 
 fun main() {
-    // getFoodsAndInsertOnDatabase()
-    val lastCodeInserted: String? = "BRC0262B"; // Use if you paused the script for some reason, put the last nutrients `food_unique_code` inserted on db. For Example: "BRC0007H"
-    getNutrientsAndInsertOnDatabase(lastNutrientsFoodCodeInserted = lastCodeInserted)
+    //    getFoodsAndInsertOnDatabase()
+        val lastCodeInserted: String? = "BRC0708F"; // Use if you paused the script for some reason, put the last nutrients `food_unique_code` inserted on db. For Example: "BRC0007H"
+        getNutrientsAndInsertOnDatabase(lastNutrientsFoodCodeInserted = lastCodeInserted)
 }
 
 fun fetch(targetUrl: String, param: Param): String? {
@@ -156,7 +156,10 @@ fun getNutrientsAndInsertOnDatabase(lastNutrientsFoodCodeInserted: String?) { //
             nutrientsList = getNutrients(code!!)
         }
 
-        if(nutrientsList.isEmpty()) return
+        if(nutrientsList.isEmpty()) {
+            Logger.warning("FETCH", "MSG: Nutrients data Not Found for $code. | C: $count | TRI: ${count * 37} | R&PT: ${formatTimeMillis(responseAndParseTime)} | DBIT: N/A | Total Time Elapsed: ${formatTimeMillis(totalTimeElapsed)}")
+            continue
+        }
 
         val dbTime = elapsedTime {
             try {
@@ -184,6 +187,6 @@ fun getNutrientsAndInsertOnDatabase(lastNutrientsFoodCodeInserted: String?) { //
         }
 
         totalTimeElapsed += responseAndParseTime + dbTime
-        println("MSG: All nutrients from $code entered successfully! | C: $count | TRI: ${count * 37} | R&PT: ${formatTimeMillis(responseAndParseTime)} | DBIT: ${formatTimeMillis(dbTime)} | Total Time Elapsed: ${formatTimeMillis(totalTimeElapsed)}")
+        Logger.success("PROCESS","MSG: All nutrients from $code entered successfully! | C: $count | TRI: ${count * 37} | R&PT: ${formatTimeMillis(responseAndParseTime)} | DBIT: ${formatTimeMillis(dbTime)} | Total Time Elapsed: ${formatTimeMillis(totalTimeElapsed)}")
     }
 }
