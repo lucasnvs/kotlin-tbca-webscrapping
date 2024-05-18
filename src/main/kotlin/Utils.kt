@@ -1,7 +1,3 @@
-import java.lang.NumberFormatException
-import kotlin.math.roundToLong
-import kotlin.time.Duration.Companion.milliseconds
-
 fun elapsedTime(block: () -> Unit): Long {
     val startTime = System.currentTimeMillis()
     block()

@@ -61,21 +61,21 @@ class Scraper {
     }
 
     private fun fetch(targetUrl: String, param: Param): String? {
-        return ApiClient.fetchNutritionalData(targetUrl, param);
+        return ApiClient.fetchNutritionalData(targetUrl, param)
     }
 
     private fun parseRowsToFoods(document: String) : List<Food> {
         val FIELDS_NUMBER = 5
         val doc: Document = Ksoup.parse(document)
         val trs = doc.select(".table tbody tr")
-        var result = mutableListOf<Food>()
+        val result = mutableListOf<Food>()
 
         for(tr in trs) {
             val dataCols: Elements = tr.select("td a")
             if(dataCols.size === FIELDS_NUMBER) {
                 val (code, name, scientificName, group, brand) = dataCols
                 result.add(Food(code.text(), name.text(), scientificName.text(), group.text(), brand.text(), null))
-                continue;
+                continue
             }
             println("ERRO: Quantidade de CAMPOS e NUMERO DE COLUNAS incompatível!")
             break
@@ -93,13 +93,13 @@ class Scraper {
         val FIELDS_NUMBER = 9
         val doc: Document = Ksoup.parse(document)
         val trs = doc.select("#tabela1 tbody tr")
-        var result = mutableListOf<Nutrients>()
+        val result = mutableListOf<Nutrients>()
         for(tr in trs) {
             val dataCols: Elements = tr.select("td")
             if(dataCols.size === FIELDS_NUMBER) {
                 val (component, unity, value, standardDeviation, minValue, maxValue, numberOfData, references, typeOfData) = dataCols
                 result.add(Nutrients(component.text(), unity.text(), tryParseToDouble(value.text()), standardDeviation.text(), tryParseToDouble(minValue.text()), tryParseToDouble(maxValue.text()), tryParseToInt(numberOfData.text()), references.text(), typeOfData.text()))
-                continue;
+                continue
             }
             println("ERRO: Quantidade de CAMPOS e NUMERO DE COLUNAS incompatível!")
             break
@@ -112,7 +112,7 @@ class Scraper {
         val START_PAGE = 1
         val TOTAL_PAGES = 57 // Total Pages on Website = 57
 
-        var result: List<Food> = listOf();
+        var result: List<Food> = listOf()
         for (page in START_PAGE..TOTAL_PAGES) {
             val tbcaHTML = fetch(FOOD_TARGET_URL, Param("pagina", page.toString()))
             if(tbcaHTML == null) {
@@ -158,14 +158,14 @@ class Scraper {
     }
 
     private fun getNutrientsAndInsertOnDatabase(lastNutrientsFoodCodeInserted: String? = null) {
-        var query: Query
+        val query: Query
         var count = 0
-        if(lastNutrientsFoodCodeInserted.isNullOrEmpty()) {
-            query = Connection.database.from(FoodsDB).select(FoodsDB.uniqueCode)
-        } else {
-            query = Connection.database.from(FoodsDB).select(FoodsDB.uniqueCode).where { FoodsDB.uniqueCode greater lastNutrientsFoodCodeInserted}.orderBy(
-                FoodsDB.uniqueCode.asc())
-        }
+        query = if(lastNutrientsFoodCodeInserted.isNullOrEmpty()) {
+                    Connection.database.from(FoodsDB).select(FoodsDB.uniqueCode)
+                } else {
+                    Connection.database.from(FoodsDB).select(FoodsDB.uniqueCode).where { FoodsDB.uniqueCode greater lastNutrientsFoodCodeInserted}.orderBy(
+                        FoodsDB.uniqueCode.asc())
+                }
 
         var totalTimeElapsed: Long = 0
 
