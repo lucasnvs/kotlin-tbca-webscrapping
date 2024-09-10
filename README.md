@@ -1,25 +1,22 @@
-# Webscrapping on TBCA Website
+# Webscrapping em TBCA Website
 
-IMPORTANT: Website - Tabela Brasileira de Composição de Alimentos - Date Version: 17/05/2024.
+IMPORTANTE: Website - Tabela Brasileira de Composição de Alimentos - Data da Versão: 17/05/2024.
 
-## Description
+## Descrição
 
-I did this to get all the data present in TBCA in HTML table format, 
-because I didn't find a Public API that did this for me. And pass it to my own database.
+Fiz isto para pegar todos os dados presentes na TBCA em forma de tabela HTML. Porque não encontrei uma API Publica que me devolvesse estes dados.
 
-Sorry for the requests TBCA Server :(
-
-### Technologies:
+### Tecnologias:
 - OkHttp to Fetch Website DOM
 - Ksoup to Parse HTML
 - Ktorm to Handle Database
 - HikariCP to Handle Connection Pool
 
-### Time:
+### Tempo:
 
-On my machine the code runs in:
+Na minha máquina o script demora aproximadamente:
 
-- **~11min30s** to get and insert **209.864** nutrients records.
+- **~11min30s** para pegar e inserir **209.864** registros de nutrientes.
 
 ### MYSQL DATABASE TBCA:
 
